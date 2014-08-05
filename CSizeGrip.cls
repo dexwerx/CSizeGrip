@@ -1,16 +1,3 @@
-VERSION 1.0 CLASS
-BEGIN
-  MultiUse = -1  'True
-  Persistable = 0  'NotPersistable
-  DataBindingBehavior = 0  'vbNone
-  DataSourceBehavior  = 0  'vbNone
-  MTSTransactionMode  = 0  'NotAnMTSObject
-END
-Attribute VB_Name = "CSizeGrip"
-Attribute VB_GlobalNameSpace = False
-Attribute VB_Creatable = True
-Attribute VB_PredeclaredId = False
-Attribute VB_Exposed = False
 ' Copyright © 2014 Dexter Freivald. All Rights Reserved. DEXWERX.COM
 '
 ' CSizeGrip.cls
@@ -58,7 +45,7 @@ Private Declare Function DrawFrameControl Lib "user32" (ByVal hDC As Long, ByRef
 Private Declare Function OpenThemeData Lib "uxtheme" (ByVal hWnd As Long, ByVal pszClassList As Long) As Long
 Private Declare Function CloseThemeData Lib "uxtheme" (ByVal hTheme As Long) As Long
 Private Declare Function GetThemePartSize Lib "uxtheme" (ByVal hTheme As Long, ByVal hDC As Long, ByVal iPartId As Long, ByVal iStateId As Long, ByVal prc As Long, ByVal eSize As Long, psz As SIZE) As Long
-Private Declare Function DrawThemeBackground Lib "uxtheme" (ByVal hTheme As Long, ByVal lHDC As Long, ByVal iPartId As Long, ByVal iStateId As Long, pRect As RECT, pClipRect As RECT) As Long
+Private Declare Function DrawThemeBackground Lib "uxtheme" (ByVal hTheme As Long, ByVal hDC As Long, ByVal iPartId As Long, ByVal iStateId As Long, pRect As RECT, pClipRect As RECT) As Long
 
 Public Enum EGripOrientation
     gripBottomRight
@@ -66,9 +53,8 @@ Public Enum EGripOrientation
 End Enum
 
 Private WithEvents m_Parent As Form
-Attribute m_Parent.VB_VarHelpID = -1
 Private WithEvents m_Grip As Label
-Attribute m_Grip.VB_VarHelpID = -1
+Private m_Clip As RECT
 Private m_Orientation As EGripOrientation
 '
 
@@ -86,14 +72,19 @@ End Property
 
 Public Sub Attach(Parent As Form, Optional GripOrientation As EGripOrientation = gripBottomRight)
     Dim hTheme As Long
-    Dim ControlSize As SIZE
+    Dim GripSize As SIZE
     
     m_Orientation = GripOrientation
+    
     Set m_Parent = Parent
-    If m_Grip Is Nothing Then Set m_Grip = m_Parent.Controls.Add("VB.Label", "lblGrip" & CStr(Orientation) & m_Parent.Name)
+    m_Parent.ScaleMode = vbPixels
+
+    Set m_Grip = m_Parent.Controls.Add("VB.Label", "lblSizeGrip")
     With m_Grip
         .Caption = vbNullString
         .BackStyle = vbTransparent
+        .Width = GetSystemMetrics(SM_CXVSCROLL)
+        .Height = GetSystemMetrics(SM_CYHSCROLL)
         .Visible = True
         .MousePointer = vbSizeNWSE
         If m_Orientation = gripBottomLeft Then .MousePointer = vbSizeNESW
@@ -101,13 +92,11 @@ Public Sub Attach(Parent As Form, Optional GripOrientation As EGripOrientation =
     
     hTheme = OpenThemeData(m_Parent.hWnd, StrPtr(SPB_CLASS))
     If hTheme Then
-        GetThemePartSize hTheme, m_Parent.hDC, SPB_SIZEBOX, SZB_RIGHTALIGN + m_Orientation, 0, TS_TRUE, ControlSize
-        m_Grip.Width = ControlSize.cx
-        m_Grip.Height = ControlSize.cy
+        If GetThemePartSize(hTheme, m_Parent.hDC, SPB_SIZEBOX, SZB_RIGHTALIGN + m_Orientation, 0, TS_TRUE, GripSize) = S_OK Then
+            m_Grip.Width = GripSize.cx
+            m_Grip.Height = GripSize.cy
+        End If
         CloseThemeData hTheme
-    Else
-        m_Grip.Width = GetSystemMetrics(SM_CXVSCROLL)
-        m_Grip.Height = GetSystemMetrics(SM_CYHSCROLL)
     End If
 End Sub
 
@@ -123,21 +112,21 @@ End Sub
 
 Private Sub m_Parent_Paint()
     Dim hTheme As Long
-    Dim ControlRect As RECT
+    Dim ClipRect As RECT
     
-    If m_Orientation = gripBottomRight Then ControlRect.Left = m_Parent.ScaleWidth - m_Grip.Width
-    ControlRect.Top = m_Grip.Top
-    ControlRect.Right = ControlRect.Left + m_Grip.Width
-    ControlRect.Bottom = m_Grip.Top + m_Grip.Height
+    If m_Orientation = gripBottomLeft Then ClipRect.Left = m_Grip.Left
+    ClipRect.Top = m_Grip.Top
+    ClipRect.Right = m_Grip.Left + m_Grip.Width
+    ClipRect.Bottom = m_Grip.Top + m_Grip.Height
     
     hTheme = OpenThemeData(m_Parent.hWnd, StrPtr(SPB_CLASS))
     If hTheme Then
-        DrawThemeBackground hTheme, m_Parent.hDC, SPB_SIZEBOX, SZB_RIGHTALIGN + m_Orientation, ControlRect, ControlRect
+        DrawThemeBackground hTheme, m_Parent.hDC, SPB_SIZEBOX, SZB_RIGHTALIGN + m_Orientation, ClipRect, ClipRect
         CloseThemeData hTheme
     Else
         Select Case m_Orientation
-        Case gripBottomRight:   DrawFrameControl m_Parent.hDC, ControlRect, DFC_SCROLL, DFCS_SCROLLSIZEGRIP
-        Case gripBottomLeft:    DrawFrameControl m_Parent.hDC, ControlRect, DFC_SCROLL, DFCS_SCROLLSIZEGRIPRIGHT
+        Case gripBottomRight:   DrawFrameControl m_Parent.hDC, ClipRect, DFC_SCROLL, DFCS_SCROLLSIZEGRIP
+        Case gripBottomLeft:    DrawFrameControl m_Parent.hDC, ClipRect, DFC_SCROLL, DFCS_SCROLLSIZEGRIPRIGHT
         End Select
     End If
 End Sub

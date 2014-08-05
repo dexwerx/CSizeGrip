@@ -129,7 +129,7 @@ Private Sub m_Parent_Paint()
     Dim hTheme As Long
     Dim ClipRect As RECT
     
-    If m_Orientation = gripBottomLeft Then ClipRect.Left = m_Grip.Left
+    If m_Orientation = gripBottomRight Then ClipRect.Left = m_Grip.Left
     ClipRect.Top = m_Grip.Top
     ClipRect.Right = m_Grip.Left + m_Grip.Width
     ClipRect.Bottom = m_Grip.Top + m_Grip.Height

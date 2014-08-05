@@ -1,3 +1,16 @@
+VERSION 1.0 CLASS
+BEGIN
+  MultiUse = -1  'True
+  Persistable = 0  'NotPersistable
+  DataBindingBehavior = 0  'vbNone
+  DataSourceBehavior  = 0  'vbNone
+  MTSTransactionMode  = 0  'NotAnMTSObject
+END
+Attribute VB_Name = "CSizeGrip"
+Attribute VB_GlobalNameSpace = False
+Attribute VB_Creatable = True
+Attribute VB_PredeclaredId = False
+Attribute VB_Exposed = False
 ' Copyright © 2014 Dexter Freivald. All Rights Reserved. DEXWERX.COM
 '
 ' CSizeGrip.cls
@@ -53,7 +66,9 @@ Public Enum EGripOrientation
 End Enum
 
 Private WithEvents m_Parent As Form
+Attribute m_Parent.VB_VarHelpID = -1
 Private WithEvents m_Grip As Label
+Attribute m_Grip.VB_VarHelpID = -1
 Private m_Clip As RECT
 Private m_Orientation As EGripOrientation
 '
